@@ -53,8 +53,8 @@ GPIO.cleanup([Z_MOTOR_DIR, Z_MOTOR_STEP, Y_MOTOR_DIR, Y_MOTOR_STEP])
 
 class motorControl:
     def __init__(self, MOTOR_STEP_PIN, MOTOR_DIR_PIN, step_angle_deg=1.8, micro_steps=.125):
-        self.step_pin = STEP_PIN 
-        self.dir_pin = DIR_PIN 
+        self.step_pin = MOTOR_STEP_PIN 
+        self.dir_pin = MOTOR_DIR_PIN 
         GPIO.setwarnings(True)
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(MOTOR_STEP_PIN, GPIO.OUT, initial=GPIO.LOW) 
@@ -70,12 +70,10 @@ class motorControl:
         delay = speed   # Degrees per second. Steps per degree
         # move_time = delay * 2 * steps
         for step in range(0, steps):
-            GPIO.output(Z_MOTOR_STEP, GPIO.HIGH)
-            GPIO.output(Y_MOTOR_STEP, GPIO.HIGH)
+            GPIO.output(self.step_pin, GPIO.HIGH)
             time.sleep(delay)
-            GPIO.output(Z_MOTOR_STEP, GPIO.LOW)
-            GPIO.output(Y_MOTOR_STEP, GPIO.LOW)   
+            GPIO.output(self.dir_pin, GPIO.LOW)
             time.sleep(delay)
 
     def close(self):
-        GPIO.cleanup([MOTOR_STEP_PIN, MOTOR_DIR_PIN])
+        GPIO.cleanup([self.step_pin, self.dir_pin]) 
