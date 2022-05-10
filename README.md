@@ -1,6 +1,4 @@
-# PAWD
-## Precision animal watering device
-
+# PAWD: Precision Animal Watering Device
 
 ### Startup 
     ./main.py 
