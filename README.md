@@ -3,6 +3,6 @@
 
 
 ### Startup 
-    ./detectnet.py 
+    ./main.py 
 
 
