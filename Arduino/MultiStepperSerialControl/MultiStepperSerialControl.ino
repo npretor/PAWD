@@ -24,6 +24,8 @@ int xPulses = 0;
 int yPulses = 0;
 int xPulseDuration = 0;
 int yPulseDuration = 0;
+int triggerValue = 0;
+int prevTrigger = 0;
 
 
 const byte numChars = 32;
@@ -50,12 +52,12 @@ void setup() {
     delay(100);
 
     // - - - - Motor settings - - - - //
-    xStepper.setMaxSpeed(3000.0);
-    xStepper.setAcceleration(3000.0);
+    xStepper.setMaxSpeed(5000.0);
+    xStepper.setAcceleration(35000.0);
     xStepper.moveTo(200);
     
-    yStepper.setMaxSpeed(3000.0);
-    yStepper.setAcceleration(3000.0);
+    yStepper.setMaxSpeed(5000.0);
+    yStepper.setAcceleration(35000.0);
     yStepper.moveTo(200);
   
   
@@ -80,7 +82,8 @@ void loop() {
         Serial.println("ack");
         
         newData = false;
-        
+
+        // = = = = = = = Move motors = = = = = = = //
         //showParsedData(xPulses, yPulses); 
         // Relative move
         xStepper.move(xPulses); 
@@ -88,6 +91,15 @@ void loop() {
         // Absolute move
         //xStepper.moveTo(xPulses); 
         //yStepper.moveTo(yPulses);  
+        // = = = = = = = Trigger logic = = = = = = = //
+
+        // Check to see if trigger values are updated 
+        if (prevTrigger == triggerValue){
+          // Pass
+        } else {
+            digitalWrite(TRIGGER_PIN, triggerValue);
+        }
+
     }
 
 
@@ -145,6 +157,9 @@ void parseData() {      // split the data into its parts
     xPulseDuration    = atoi(strtokIndx);
     strtokIndx       = strtok(NULL, ",");            
     yPulseDuration    = atoi(strtokIndx);
+    
+    strtokIndx       = strtok(NULL, ",");
+    triggerValue           = atoi(strtokIndx);                
     
 
 
