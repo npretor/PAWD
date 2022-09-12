@@ -109,19 +109,19 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
                 #    pass
                 #else:
                 print('Moving right')
-                ser.write(b'<0, -50, 0, 0>')
+                ser.write(b'<0, -100, 0, 0, 0>')
                 time.sleep(0.01) 
             elif error[0] < 0:
                 #if previousError[0] < 0:
                 #    pass
                 #else:
                 print('Moving left')
-                ser.write(b'<0, 50, 0, 0>')
+                ser.write(b'<0, 100, 0, 0, 0>')
                 time.sleep(0.01) 
             previousError = error
         else:
             print('object on target')
-            ser.write(b'<0, 0, 0, 0>') 
+            ser.write(b'<0, 0, 0, 0, 1>') 
 
         # PID calculation
         controlx = pidx(error[0]) 
@@ -133,7 +133,8 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
 
         print('======================================================================')
         if not input.IsStreaming() or not output.IsStreaming():
-            ser.write(b'<0,0,0,0>') 
+            ser.write(b'<0,0,0,0, 0>')
+            print("writing zeroes") 
             break
 
 
