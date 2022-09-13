@@ -40,34 +40,66 @@ pidy = PID(1.5, 0.1, 0.05, setpoint=0)
 
 ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
 
+class ObjectTracker:
+    """
+    Get the detection results
+    See if there is a desired object in view
+    Get the location of the desired object 
+    """
+    def __init__(self, object_type="person", bbox_size=50):
+        self.object_type = object_type     
+        self.object_detected = False 
 
-def boundingBoxToError(bbox_center, imageSize):
-    """
-    We need to make this a separate function from alignment since we should smooth over any gaps. 
-    The models doesn't have any object permanece so we have to make an approximation 
-    Input:  
-        frames: (tuple) frames to wait after the object dissapears. 
-    """
-    
-    imageCenter = (int(imageSize[0]/2), int(imageSize[1]/2)) 
-    
-    error = (bbox_center[0] - imageCenter[0], bbox_center[1] -  imageCenter[1])
+        self.detections = {
+            'person': 1,
+            'cat': 18, 
+            'dog': 19
+        } 
 
-    return error 
+        # Update these 
+        self.object_center = None
+        self.object_
+     
 
-def processDetections(detections):
-    """
-    ID 1 is a person
-    ID 18 is a cat
-    ID 19 is a dog
-    """
-    bbox_center = (imgx/2, imgy/2)
-    if len(detections) >= 1:
-        for detection in detections:
-            if detection.ClassID == 1:
-                print('person found')
-                return detection.Center
-    return bbox_center
+    def errorFromCenter(self, bbox_center, image_size):
+        """
+        We need to make this a separate function from alignment since we should smooth over any gaps and interpolate for n frames. 
+        The model doesn't have any object permenance so we have to make an approximation 
+        Input:  
+            frames: (tuple) frames to wait after the object dissapears. 
+        """
+        
+        imageCenter = (int(image_size[0]/2), int(image_size[1]/2)) 
+        error = (bbox_center[0] - imageCenter[0], bbox_center[1] -  imageCenter[1]) 
+        return error 
+
+    def objectDetected(self, detections):
+        if len(detections) > 0:
+            for detection in detections:
+                if self.detections[self.object_type] == detection.ClassID:
+                    self.object_center = detection.Center
+                    self.object_detected = True
+                    return True
+            self.object_detected = True
+            return False
+        else:
+            self.object_detected = True
+            return False
+
+
+    def processDetections(self, detections):
+        """
+        ID 1 is a person 
+        ID 18 is a cat 
+        ID 19 is a dog 
+        """
+        bbox_center = (imgx/2, imgy/2) 
+        if len(detections) >= 1:
+            for detection in detections:
+                if detection.ClassID == 1:
+                    print('person found')
+                    return detection.Center
+        return bbox_center
 
 
 output = jetson.utils.videoOutput(opt.output_URI, argv=sys.argv+is_headless)
@@ -77,10 +109,10 @@ net = jetson.inference.detectNet(opt.network, sys.argv, opt.threshold)
 # create video sources
 input = jetson.utils.videoSource(opt.input_URI, argv=sys.argv)
 
-
 threshold = 50
 previousError = (1,1)
 
+tracker = ObjectTracker()
 
 with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
     while True:
@@ -88,53 +120,49 @@ with serial.Serial(port='/dev/ttyACM0', baudrate=115200) as ser:
         img = input.Capture()     # img.shape (height, width) 
         imgx = img.shape[1] 
         imgy = img.shape[0] 
+        bbox_center = (imgx/2, imgy/2)
 
         # detect objects in the image (with overlay)
-        detections = net.Detect(img, overlay=opt.overlay)
-        print("detected {:d} objects in image".format(len(detections)))
+        detections = net.Detect(img, overlay=opt.overlay) 
+        print("detected {:d} objects in image".format(len(detections))) 
 
         output.Render(img)
         output.SetStatus("{:s} | Network {:.0f} FPS".format(opt.network, net.GetNetworkFPS()))
 
         # Sort detections for desired object
-        bbox_center = processDetections(detections)
-
-        # Calulate the error relative to the center of the image, leaving a center buffer zone 
-        error = boundingBoxToError(bbox_center, (imgx, imgy))
-        print('Error: ', error)
-
-        if abs(error[0]) > threshold:
-            if error[0] > 0:
-                #if previousError[0] > 0:
-                #    pass
-                #else:
-                print('Moving right')
-                ser.write(b'<0, -100, 0, 0, 0>')
-                time.sleep(0.01) 
-            elif error[0] < 0:
-                #if previousError[0] < 0:
-                #    pass
-                #else:
-                print('Moving left')
-                ser.write(b'<0, 100, 0, 0, 0>')
-                time.sleep(0.01) 
-            previousError = error
+        if not tracker.objectDetected(detections):
+            # Don't move 
+            # Don't fire 
+            ser.write(b'<0,0,0,0,0>')
+            continue
         else:
-            print('object on target')
-            ser.write(b'<0, 0, 0, 0, 1>') 
+            # Calulate the error relative to the center of the image, leaving a center buffer zone 
+            error = tracker.errorFromCenter(bbox_center, image_size=(imgx, imgy))
+            print('Error: ', error)
 
-        # PID calculation
-        controlx = pidx(error[0]) 
-        controly = pidy(error[1]) 
+            if abs(error[0]) > threshold:
+                if error[0] > 0:
+                    print('Moving right') 
+                    ser.write(b'<0, -100, 0, 0, 0>') 
+                    time.sleep(0.01) 
+                elif error[0] < 0:
+                    print('Moving left')
+                    ser.write(b'<0, 100, 0, 0, 0>') 
+                    time.sleep(0.01) 
+                previousError = error
+            else:
+                print('object on target, firing') 
+                ser.write(b'<0, 0, 0, 0, 1>') 
 
-        # Motor commands 
-        # direction, speed = process_error(error)
-        # m.move(direction, speed)
+            # PID calculation
+            controlx = pidx(error[0]) 
+            controly = pidy(error[1]) 
 
-        print('======================================================================')
-        if not input.IsStreaming() or not output.IsStreaming():
-            ser.write(b'<0,0,0,0, 0>')
-            print("writing zeroes") 
-            break
+            print('======================================================================') 
+
+            if not input.IsStreaming() or not output.IsStreaming():
+                ser.write(b'<0,0,0,0, 0>')
+                print("writing zeroes") 
+                break
 
 
