@@ -13,7 +13,9 @@ git clone git@github.com:npretor/PAWD.git && cd PAWD
 2. Flash the Arduino with the provided serial motor control sketch under ./Arduino/MultiStepperSerialControl
 3. Hookup the CSI camera to port 0
 4. Start the script on the Jetson
+```   
     sudo ./main.py 
+```
 
 ### Hookup and assembly 
 This repo runs on a Jetson Nano with a CSI camera. Selectable tracking targets are based on detectnet classes: 
