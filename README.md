@@ -1,5 +1,7 @@
 # PAWD: Precision Animal Watering Device
 
+![./docs/images/IMG_3072.jpeg](PAWD and son of PAWD) 
+
 ### Startup 
 Root priviledges are required for serial commands to the Arduino. 
 1. Clone the repository
