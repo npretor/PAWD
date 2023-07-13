@@ -1,5 +1,7 @@
 # PAWD: Precision Animal Watering Device
 
+The goal of this project was to make a water turret to keep our dogs away from certain areas in the yard. It uses a Jetson Nano for inference, and an Arduino for low level motor control. 
+
 ![PAWD and son of PAWD](./docs/images/IMG_3231.jpeg) 
 
 ### Startup 
