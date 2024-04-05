@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Main body -->
+    <div class="container">
+        <div class="row">
+            <div class="col"></div>
+            <div class="col-6">
+                <p></p>
+                <div class="jumbotron">
+                    <h2>Turret control</h2>
+                    <!-- Crosshair styling -->
+                    <style>
+                        #crosshair {
+                            position: relative;
+                        }
+    
+                        #crosshair::before,
+                        #crosshair::after {
+                            content: "";
+                            position: absolute;
+                            background-color: black;
+                        }
+    
+                        #crosshair::before {
+                            top: 50%;
+                            left: 0;
+                            right: 0;
+                            height: 1px;
+                        }
+    
+                        #crosshair::after {
+                            left: 50%;
+                            top: 0;
+                            bottom: 0;
+                            width: 1px;
+                        }
+                    </style>
+
+                    <img src="{{ url_for('video_feed') }}" width="100%">
+
+                    <!-- Camera view -->
+                    <!-- <div id="preview"> 
+                        <div id="crosshair"> 
+                            <img id="preview_image" width=100%>
+                        </div>    
+                    </div>
+                    <script src="{{ url_for('static', filename='cam_preview.js') }}"></script> -->
+
+                    <a class="btn btn-primary" href="/fire" role="button">Fire</a>
+
+                </div>
+            </div> 
+            <div class="col"></div> 
+        </div> 
+        </div> 
+
+{% endblock %} 

@@ -22,3 +22,11 @@ This repo runs on a Jetson Nano with a CSI camera. Selectable tracking targets a
 * Cat - Class 18 
 * Dog - Class 19 
 * Person - Class 1
+
+
+```
+sudo docker run --runtime nvidia -it --rm --network=host -v /tmp/argus_socket:/tmp/argus_socket -v ~/github/PAWD/:/home/PAWD/ dustynv/opencv:r32.7.1
+cd home/PAWD
+source venv/bin/activate
+pip3 install Flask nanocamera ipdb Pillow 
+```
