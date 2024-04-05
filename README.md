@@ -23,10 +23,22 @@ This repo runs on a Jetson Nano with a CSI camera. Selectable tracking targets a
 * Dog - Class 19 
 * Person - Class 1
 
-
+## Develop mode 
 ```
 sudo docker run --runtime nvidia -it --rm --network=host -v /tmp/argus_socket:/tmp/argus_socket -v ~/github/PAWD/:/home/PAWD/ dustynv/opencv:r32.7.1
 cd home/PAWD
-source venv/bin/activate
 pip3 install Flask nanocamera ipdb Pillow 
+cd flask 
+python3 app.py
+```
+
+## Build container 
+```
+docker build -t turretapp:v1 .
+```
+
+## Start the server 
+```
+sudo docker run --runtime nvidia -it --rm --network=host -v /tmp/argus_socket:/tmp/argus_socket -v ~/github/PAWD/:/home/PAWD/ turretapp:v1 
+python3 app.py
 ```

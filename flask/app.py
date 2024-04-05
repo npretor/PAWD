@@ -36,8 +36,6 @@ def gen_frames():
             b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n') 
 
 
-# while not cam.isReady():
-#     pass
 
 @app.route("/", methods={"GET", "POST"}) 
 def home():
@@ -61,7 +59,12 @@ def cam_image():
 
 @app.route("/fire")
 def fire():
-    
+    """
+    Fires for a set amount of time 
+    """
+    logging.debug('Firing')
+    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+
 
 @app.route('/video_feed') 
 def video_feed():
