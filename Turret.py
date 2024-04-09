@@ -1,17 +1,18 @@
 import time, os
 import logging 
 import threading 
+from collections import deque
 import imagezmq
 import nanocamera 
 from Hardware import MotorControl 
 
 ctime = time.ctime().replace(':',"_")
-# logging.basicConfig(
-#     filename=f"logs/{ctime}.log", 
-#     encoding='utf-8', 
-#     level=logging.DEBUG,
-#     format='%(asctime)s %(message)s',
-# )
+# FIXME 
+logging.basicConfig(
+    filename=f"logs/{ctime}.log", 
+    level=logging.INFO,
+    format='%(asctime)s %(message)s',
+)
 
 
 class Turret:
@@ -45,9 +46,11 @@ class Turret:
 
     def start_streaming(self):
         self.streamer = StreamingServer() 
+        logging.info('Streaming started')
         self.streamer.start(fps=30) 
 
     def stop_streaming(self):
+        logging.info('Streaming stopped')
         self.streamer.stop() 
 
 
@@ -86,6 +89,15 @@ class Turret:
         return False 
 
 
+class Classifier:
+    """
+    This class is in charge of getting frames from the streamer and performing classifications on them 
+    """
+    def __init__(self):
+        self.frames = deque(maxlen=25) 
+
+
+
 class StreamingServer:
     """
     Start threading
@@ -104,30 +116,27 @@ class StreamingServer:
         try:
             os.path.exists(cam_device) 
         except Exception as e:
-            print("No camera: ", e) 
+            logging.error(f"No camera: {e}") 
         
         self.camera = nanocamera.Camera(source=cam_device) 
-        print('camera ready:', self.camera.isReady()) 
+        logging.info('camera is initialized:') 
          
     def start(self, fps):
         """Start thread""" 
         self.fps = fps
         print('starting thread ')
-        self.video_thread = threading.Thread(target=self.stream_video, args=[fps])
+        self.video_thread = threading.Thread(target=self._stream_video, args=[fps])
         self.video_thread.start()
 
     def stop(self):
+        """Stop thread""" 
         self.state = '0'
         self.streaming = False
         self.video_thread.join()
         self.camera.release() 
 
-    # @property
-    def fps(self, fps):
-        """Change FPS""" 
-        pass 
 
-    def stream_video(self, fps=30):
+    def _stream_video(self, fps=30):
         """ Stream using pub-sub """ 
 
         print('initializing camera')
@@ -137,22 +146,19 @@ class StreamingServer:
         print('starting imagezmq')
         # Accept connections on all tcp addresses, port 5555 
         sender = imagezmq.ImageSender(connect_to='tcp://*:5555', REQ_REP=False) 
-        
+
         print('sending images now') 
+        i = 0 
         self.streaming = True 
         while self.streaming == True:
             frame = self.camera.read() 
             sender.send_image('image', frame) 
-            print('sent one image') 
+            print('sent image', i) 
+            i+=1 
 
 
 if __name__ == "__main__":
-    turret = Turret()
-    
-    print('starting video')
+    turret = Turret()    
     turret.start_streaming()
-    
     time.sleep(10) 
-
-    print('stopping video')
     turret.stop_streaming()
