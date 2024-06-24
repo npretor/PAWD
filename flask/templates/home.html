@@ -2,57 +2,166 @@
 
 {% block content %}
 <!-- Main body -->
-    <div class="container">
+
+<!-- HTML, Body and Video styling -->
+<style>
+    body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ddd;
+}
+
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#background-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#containerStyle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;   
+
+}
+
+.row {
+    height: 50%; /* 4 rows, each 25% of the height */
+}
+.col {
+    border: 1px solid #000; /* Optional: for better visualization */
+}
+
+</style>
+
+<!-- Crosshair styling -->
+<style>
+    #crosshair {
+        position: relative;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+        content: "";
+        position: absolute;
+        background-color: black;
+    }
+
+    #crosshair::before {
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+    }
+
+    #crosshair::after {
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+    }
+</style>
+
+<div class=".container-fluid h-100" id="containerStyle">
+
+    <script src="static/joy.min.js"></script>
+
+    <!-- <img src="{{ url_for('video_feed') }}" width="100%"> -->
+    
+    <div class="video-container">
+        <video id="background-video" autoplay muted></video>
+    </div>
+
+    <!-- Attempt 2 -->
+    <!-- <div class="row">
+        <div class="col" style="border: 2px solid black;">
+            <div class="columnLateral">
+                <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div>
+            </div>   
+        </div>
+        <div class="col" style="border: 2px solid black;">
+            2
+        </div>
+        <div class="w-100"></div>
+        <div class="col" style="border: 2px solid black;">
+            3
+        </div>
+        <div class="col" style="border: 2px solid black;">
+            <button class="btn btn-danger btn-lg" href="/fire">   Fire   </button>
+
+        </div>
+      </div> -->
+
+
         <div class="row">
-            <div class="col"></div>
-            <div class="col-6">
-                <p></p>
-                <div class="jumbotron">
-                    <h2>Turret control</h2>
-                    <!-- Crosshair styling -->
-                    <style>
-                        #crosshair {
-                            position: relative;
-                        }
+            <div class="col d-flex justify-content-center align-items-center">
+                R1, C1
+            </div>
+            <div class="col d-flex justify-content-center align-items-center">
+                R1, C2
+            </div>
+        </div>
+        <div class="row">
+            <div class="col d-flex justify-content-center align-items-center">
+                R2, C1
+                <div class="columnLateral">
+                    <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div>
+                </div>   
+            </div>
+            <div class="col d-flex justify-content-center align-items-center">
+                R2, C2
+                <button class="btn btn-danger btn-lg" href="/fire">   Fire   </button>
+            </div>
+        </div>
+
+    <!-- Camera view -->
+    <!-- <div id="preview"> 
+        <div id="crosshair"> 
+            <img id="preview_image" width=100%>
+        </div>    
+    </div> -->
     
-                        #crosshair::before,
-                        #crosshair::after {
-                            content: "";
-                            position: absolute;
-                            background-color: black;
-                        }
+    <!-- <script src="{{ url_for('static', filename='cam_preview.js') }}"></script>  -->
+
+    <script type="text/javascript">
+        var joy1IinputPosX = document.getElementById("joy1PosizioneX");
+        var joy1InputPosY = document.getElementById("joy1PosizioneY");
+        var joy1Direzione = document.getElementById("joy1Direzione");
+        var joy1X = document.getElementById("joy1X");
+        var joy1Y = document.getElementById("joy1Y");
+        /*
+        setInterval(function(){ joy1IinputPosX.value=Joy1.GetPosX(); }, 50);
+        setInterval(function(){ joy1InputPosY.value=Joy1.GetPosY(); }, 50);
+        setInterval(function(){ joy1Direzione.value=Joy1.GetDir(); }, 50);
+        setInterval(function(){ joy1X.value=Joy1.GetX(); }, 50);
+        setInterval(function(){ joy1Y.value=Joy1.GetY(); }, 50);
+        */
+        // Create JoyStick object into the DIV 'joy1Div'
+        var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
+            joy1IinputPosX.value = stickData.xPosition;
+            joy1InputPosY.value = stickData.yPosition;
+            joy1Direzione.value = stickData.cardinalDirection;
+            joy1X.value = stickData.x;
+            joy1Y.value = stickData.y;
+        });                        
+    </script>
     
-                        #crosshair::before {
-                            top: 50%;
-                            left: 0;
-                            right: 0;
-                            height: 1px;
-                        }
-    
-                        #crosshair::after {
-                            left: 50%;
-                            top: 0;
-                            bottom: 0;
-                            width: 1px;
-                        }
-                    </style>
-
-                    <img src="{{ url_for('video_feed') }}" width="100%">
-
-                    <!-- Camera view -->
-                    <!-- <div id="preview"> 
-                        <div id="crosshair"> 
-                            <img id="preview_image" width=100%>
-                        </div>    
-                    </div>
-                    <script src="{{ url_for('static', filename='cam_preview.js') }}"></script> -->
-
-                    <a class="btn btn-primary" href="/fire" role="button">Fire</a>
-
-                </div>
-            </div> 
-            <div class="col"></div> 
-        </div> 
-        </div> 
+</div> 
 
 {% endblock %} 
