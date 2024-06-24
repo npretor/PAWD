@@ -25,11 +25,12 @@ This repo runs on a Jetson Nano with a CSI camera. Selectable tracking targets a
 
 ## Develop mode 
 ```
-sudo docker run --runtime nvidia -it --rm --network=host -v /tmp/argus_socket:/tmp/argus_socket -v ~/github/PAWD/:/home/PAWD/ dustynv/opencv:r32.7.1
-cd home/PAWD
-pip3 install Flask nanocamera ipdb Pillow 
+sudo docker run --runtime nvidia -it --privileged --rm --network=host -v /tmp/argus_socket:/tmp/argus_socket -v ~/github/PAWD/:/home/PAWD/ -v /dev/ttyACM0:/dev/ttyACM0 dustynv/opencv:r32.7.1
+
+cd home/PAWD 
+pip3 install Flask nanocamera ipdb Pillow pyserial imagezmq 
 cd flask 
-python3 app.py
+python3 app.py 
 ```
 
 ## Build container 
