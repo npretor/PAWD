@@ -1,0 +1,8 @@
+version: '3' 
+services:
+  frontend:
+    build: ./docker/flask 
+  opencv:
+    build: ./docker/opencv 
+  classifier:
+    build: ./docker/inference 

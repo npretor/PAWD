@@ -1,6 +1,6 @@
 FROM dustynv/opencv:r32.7.1
 
-WORKDIR /home/PAWD/flask 
+WORKDIR /home/PAWD 
 
 RUN \
     pip3 install Flask nanocamera ipdb Pillow pyserial imagezmq 
