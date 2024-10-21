@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<style>
+<script src="static/joy.min.js"></script>
+<!-- <style>
     html, body {
         height: 100%;
         margin: 0;
@@ -46,7 +46,89 @@
     .col-divider {
         height: 100%; /* Ensure each column takes full height */
     }
+</style> -->
+
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .video-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        transform: translate(-50%, -50%);
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .video-container img {
+        min-width: 100%;
+        min-height: 100%;
+        object-fit: cover; /* Maintain aspect ratio and cover the screen */
+    }
+
+    .full-screen {
+        height: 100vh;
+        position: relative;
+        z-index: 2; /* Ensure the grid is on top of the video */
+    }
+
+    /* Transparent box */
+    .border-box.transparent {
+        background-color: rgba(255, 255, 255, 0); /* Fully transparent background */
+        border: 2px solid black; /* Visible border */
+        height: 100%;
+    }
+
+    /* Opaque box */
+    .border-box.opaque {
+        background-color: rgba(255, 255, 255, 1); /* Non-transparent background */
+        border: 2px solid black; /* Visible border */
+        height: 100%;
+    }
+
+    .row-divider {
+        height: 50%; /* Each row takes half the height */
+    }
+
+    .col-divider {
+        height: 100%; /* Each column takes full height */
+    }
+
+    .tilt-container {
+        width: 200px;
+        height: 200px;
+        background-color: white;
+        border: 2px solid black;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* The dot or box inside */
+    .tilt-indicator {
+        width: 20px;
+        height: 20px;
+        background-color: red;
+        border-radius: 50%;
+        position: absolute;
+    }
+
+    /* Coordinates display box */
+    .tilt-values {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 18px;
+    }    
 </style>
+
 </head>
 <body>
 
@@ -58,13 +140,156 @@
 <!-- Crosshair Layout -->
 <div class="container-fluid full-screen">
     <div class="row row-divider">
-        <div class="col-6 border-box col-divider"></div>
-        <div class="col-6 border-box col-divider"></div>
+        <div class="col-6 border-box transparent col-divider"></div>
+        <div class="col-6 border-box transparent col-divider"></div>
     </div>
     <div class="row row-divider">
-        <div class="col-6 border-box col-divider"></div>
-        <div class="col-6 border-box col-divider"></div>
+        <div class="col-6 border-box col-divider">
+
+        </div>
+        
+        <div class="col-6 border-box transparent col-divider">
+            <div class="opaque">
+                <!-- <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div> -->
+                <div class="tilt-container">
+                    <div class="tilt-indicator" id="tilt-indicator"></div>
+                </div>
+                <button id="request-permission">Enable Tilt</button>
+
+                <button class="btn btn-danger btn-lg" id="fire-button">   Fire   </button>
+
+
+            
+                <!-- Display tilt values -->
+                <div class="tilt-values">
+                    X: <span id="x-value">0</span>, Y: <span id="y-value">0</span>
+                </div>                 
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+    // Getting references to elements
+    const tiltIndicator = document.getElementById('tilt-indicator');
+    const xValueDisplay = document.getElementById('x-value');
+    const yValueDisplay = document.getElementById('y-value');
+    const permissionButton = document.getElementById('request-permission');
+
+    // Load this first, since we may not want to use tilt to control the device
+    document.getElementById('fire-button').addEventListener('click', function() {
+        const data = {
+            message: "fire_one_shot"
+        };
+
+        fetch('/fire', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json()) // Parse JSON response
+        // .then(data => {
+        //     // Update the page with the response (without refresh)
+        //     // document.getElementById('response').innerText = `Response from server: ${data.response}`;
+        //     console.log(data.response);
+        // })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    });
+
+    // Function to update tilt indicator position
+    function updateTilt(x, y) {
+        const maxTilt = 90; // Max degrees for x and y tilt
+
+        // Normalize the x and y values to fit inside the container
+        const normalizedX = Math.max(-maxTilt, Math.min(maxTilt, x));
+        const normalizedY = Math.max(-maxTilt, Math.min(maxTilt, y));
+
+        // Convert the normalized tilt into positions relative to the container size
+        const containerSize = 200; // Container is 200x200 pixels
+        const indicatorSize = 20;  // Indicator is 20x20 pixels
+
+        const posX = (containerSize / 2 - indicatorSize / 2) * (normalizedX / maxTilt);
+        const posY = (containerSize / 2 - indicatorSize / 2) * (normalizedY / maxTilt);
+
+        // Update the position of the tilt indicator
+        tiltIndicator.style.transform = `translate(${posX}px, ${posY}px)`;
+
+        // Update the text displaying tilt values
+        xValueDisplay.innerText = Math.round(normalizedX);
+        yValueDisplay.innerText = Math.round(normalizedY);
+
+
+        // Send tilt values to the server 
+        fetch('/tilt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "tiltLR": normalizedX,
+                "tiltFB": normalizedY,
+                // direction: dir
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.error('error: ', error);
+        });        
+    }
+
+    // Function to handle device orientation updates
+    function handleOrientationEvent(event) {
+        const xTilt = event.beta;  // Tilt forward/backward (x-axis)
+        const yTilt = event.gamma; // Tilt left/right (y-axis)
+
+        // Update tilt indicator based on tilt values
+        updateTilt(yTilt, xTilt); // Y and X might be swapped depending on device orientation
+    }
+
+    // Request permission for device orientation on iOS
+    permissionButton.addEventListener('click', () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission()
+                .then(permissionState => {
+                    if (permissionState === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientationEvent);
+                    } else {
+                        alert('Permission denied. Unable to access device orientation.');
+                    }
+                })
+                .catch(console.error);
+        } else {
+            // For browsers that don't require permission
+            window.addEventListener('deviceorientation', handleOrientationEvent);
+        }
+
+        // Hide the button after requesting permission
+        permissionButton.style.display = 'none';
+    });
+
+    // If DeviceOrientationEvent is not supported, simulate tilt values for testing
+    if (!window.DeviceOrientationEvent) {
+        alert('Device Orientation is not supported on this device. Simulating tilt values.');
+        let xSimulated = 0;
+        let ySimulated = 0;
+
+        setInterval(() => {
+            // Simulating some tilt for testing
+            xSimulated = Math.sin(Date.now() / 1000) * 45; // Simulated tilt values between -45 and 45
+            ySimulated = Math.cos(Date.now() / 1000) * 45;
+
+            updateTilt(xSimulated, ySimulated);
+        }, 100);
+    }
+</script>
 
 {% endblock %} 

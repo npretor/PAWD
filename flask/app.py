@@ -16,6 +16,7 @@ import sys, time
 from PIL import Image
 from io import BytesIO 
 import imagezmq 
+import json
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -96,12 +97,16 @@ def receive_tilt():
     data = request.json
     tiltLR = data.get('tiltLR')
     tiltFB = data.get('tiltFB')
-    direction = data.get('direction')
+    # direction = data.get('direction')
 
-    print(f"Tilt Left/Right: {tiltLR}, Tilt Front/Back: {tiltFB}, Direction: {direction}")
+    # print(f"Tilt Left/Right: {tiltLR}, Tilt Front/Back: {tiltFB}, Direction: {direction}")
 
     return jsonify({"status": "success", "message": "Tilt data received"}), 200
 
+
+@app.route('/show_tilt')
+def show_tilt():
+    return render_template('tilt.html')    
 
 
 @app.route("/fire", methods={"GET", "POST"})
@@ -110,7 +115,8 @@ def fire():
     Fires for a set amount of time 
     """
     logging.debug('Firing')
-    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+    # return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+    return jsonify({'success': True}), 200
 
 
 # @app.route('/video_feed', methods={"GET", "POST"}) 
