@@ -8,6 +8,7 @@ import flask
 from flask import Flask, request, render_template, jsonify, redirect, send_file, Response
 from flask.views import View, MethodView
 import cv2 as cv
+import serial 
 
 import signal
 
@@ -17,11 +18,23 @@ from PIL import Image
 from io import BytesIO 
 import imagezmq 
 import json
+import numpy as np
 
 import logging
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
+
+
+ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200)
+
+
+
+def map_x_range(values, old_min=0, old_max=90, new_min=1200, new_max=1800):
+    return np.clip( ((values - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min, a_min=new_min, a_max=new_max)
+
+def map_y_range(values, old_min=-45, old_max=45, new_min=1200, new_max=1800):
+    return np.clip( ((values - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min, a_min=new_min, a_max=new_max)
 
 
 def gstreamer_pipeline(
@@ -71,7 +84,6 @@ signal.signal(signal.SIGTERM, signal_handler)  # For termination signal
 
 
 
-
 @app.route("/", methods={"GET", "POST"}) 
 def home():
     if request.method == "POST":
@@ -99,7 +111,14 @@ def receive_tilt():
     tiltFB = data.get('tiltFB')
     # direction = data.get('direction')
 
-    # print(f"Tilt Left/Right: {tiltLR}, Tilt Front/Back: {tiltFB}, Direction: {direction}")
+    # print(f"X:\t{tiltLR}, Y:\t{tiltFB}")
+    remapped_x = int(map_x_range(tiltLR))
+    remapped_y = int(map_y_range(tiltFB))
+    # message = f'<str(remapped_x), str(remapped_y), 0>'
+    ser.write(f'<{remapped_x}, {remapped_y}, 0>'.encode())
+
+    print("x: ", remapped_x, "  y: ",remapped_y)
+
 
     return jsonify({"status": "success", "message": "Tilt data received"}), 200
 
@@ -114,7 +133,7 @@ def fire():
     """
     Fires for a set amount of time 
     """
-    logging.debug('Firing')
+    print('Firing')
     # return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     return jsonify({'success': True}), 200
 
@@ -126,6 +145,7 @@ def fire():
 #     This creates the problem of the camera not being able to stop 
 #     """
 #     return Response(gen_frames2(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/video_feed')
 def video_feed():
