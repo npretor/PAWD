@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script src="static/joy.min.js"></script>
+
+
+<body>
+    <!-- Video Container -->
+    <div class="video-container">
+        <img src="{{ url_for('video_feed') }}">
+    </div>
+    
+
+    <!-- Crosshair Layout -->
+    <div class="container-fluid full-screen">
+        <div class="row row-divider">
+            <div class="col-6 border-box transparent col-divider"></div>
+            <div class="col-6 border-box transparent col-divider"></div>
+        </div>
+        <div class="row row-divider">
+            <div class="col-6 border-box col-divider"></div>
+            
+            <div class="col-6 border-box transparent col-divider">
+                <div class="opaque">
+                    
+                    <!-- Enable this if tilt is not an option, or is not enabled.  -->
+                    <!-- <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div> -->
+
+                    <div id="joy1Div" style="width:200px;height:200px;margin:50px"></div>
+                    Posizione X:<input id="joy1PosizioneX" type="text" /><br />
+                    Posizione Y:<input id="joy1PosizioneY" type="text" /><br />
+                    Direzione:<input id="joy1Direzione" type="text" /><br />
+                    X :<input id="joy1X" type="text" /></br>
+                    Y :<input id="joy1Y" type="text" />
+
+                    <!-- Fire button  -->
+                    <button class="btn btn-danger btn-lg" id="fire-button">   Fire   </button>
+               
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var joy1IinputPosX = document.getElementById("joy1PosizioneX");
+        var joy1InputPosY = document.getElementById("joy1PosizioneY");
+        var joy1Direzione = document.getElementById("joy1Direzione");
+        var joy1X = document.getElementById("joy1X");
+        var joy1Y = document.getElementById("joy1Y");
+        /*
+        setInterval(function(){ joy1IinputPosX.value=Joy1.GetPosX(); }, 50);
+        setInterval(function(){ joy1InputPosY.value=Joy1.GetPosY(); }, 50);
+        setInterval(function(){ joy1Direzione.value=Joy1.GetDir(); }, 50);
+        setInterval(function(){ joy1X.value=Joy1.GetX(); }, 50);
+        setInterval(function(){ joy1Y.value=Joy1.GetY(); }, 50);
+        */
+
+        document.getElementById('fire-button').addEventListener('click', function() {
+            console.log("firing");
+
+            fetch('/fire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({"data": "fire"}),
+            })
+        // .then(response => response.json()) // Parse JSON response
+        // // .then(data => {
+        // //     // Update the page with the response (without refresh)
+        // //     // document.getElementById('response').innerText = `Response from server: ${data.response}`;
+        // //     console.log(data.response);
+        // // })
+        // .catch((error) => {
+        //     console.error('Error:', error);
+        // });
+        });
+
+
+        // Create JoyStick object into the DIV 'joy1Div'
+        var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
+            joy1IinputPosX.value = stickData.xPosition;
+            joy1InputPosY.value = stickData.yPosition;
+            joy1Direzione.value = stickData.cardinalDirection;
+            joy1X.value = stickData.x;
+            joy1Y.value = stickData.y;
+        });              
+        
+        setInterval(function(){ 
+            console.log(joy1X.value, joy1Y.value); 
+
+            fetch('/joystick', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "x": joy1X.value,
+                    "y": joy1Y.value
+                })
+            })
+
+            
+
+        }, 50);
+    </script>
+</body>
+
+    
+
+{% endblock %} 

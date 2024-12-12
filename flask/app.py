@@ -9,6 +9,7 @@ from flask import Flask, request, render_template, jsonify, redirect, send_file,
 from flask.views import View, MethodView
 import cv2 as cv
 import serial 
+import threading 
 
 import signal
 
@@ -26,8 +27,24 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 
-ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200)
+x, y, = 1500, 1500 
+fire = False 
+serial_active = True 
+video_active = True
 
+ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200) 
+
+
+
+def motion_control():
+    global x, y, fire, serial_active, video_active
+    while serial_active:
+        
+        ser.write(f'<{x}, {y}, 0>'.encode())
+        time.sleep(0.100)
+
+
+thread = threading.Thread(target=motion_control, daemon=True)
 
 
 def map_x_range(values, old_min=0, old_max=90, new_min=1200, new_max=1800):
@@ -35,6 +52,7 @@ def map_x_range(values, old_min=0, old_max=90, new_min=1200, new_max=1800):
 
 def map_y_range(values, old_min=-45, old_max=45, new_min=1200, new_max=1800):
     return np.clip( ((values - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min, a_min=new_min, a_max=new_max)
+
 
 
 def gstreamer_pipeline(
@@ -55,7 +73,9 @@ def gstreamer_pipeline(
 camera = cv.VideoCapture(gstreamer_pipeline(), cv.CAP_GSTREAMER)
 
 def generate_frames():
-    while True:
+    global video_active
+
+    while video_active:
         success, frame = camera.read()
         if not success:
             break
@@ -69,8 +89,15 @@ def generate_frames():
 def shutdown_server():
     """Function to release the camera and cleanup resources"""
     print("Shutting down server and releasing resources...")
+    global x, y, fire, serial_active, video_active
+    serial_active = False 
+    video_active = False
+
+    time.sleep(1)
+    
+    thread.join()
     camera.release()
-    time.sleep
+    time.sleep(3)
     sys.exit(0)  
 
 
@@ -89,38 +116,57 @@ def home():
     if request.method == "POST":
         return redirect("/")
     else:
-        return render_template('home2.html')
+        return render_template('home_joystick_only.html') # Use home2 for tilt controls
 
-
-@app.route("/cam_image", methods={"GET", "POST"})
-def cam_image():
-    """This method is from the voltera camera example, and is not working""" 
-    
-    frame = cam.read() 
-    byte_io = BytesIO()
-    return send_file(encoded_frame, mimetype='image/png')
-        
-    # Image.fromarray(frame).save(byte_io, format="PNG")
-    # key, encoded_frame = cv.imencode(".png", frame)
 
 
 @app.route('/tilt', methods=['POST'])
 def receive_tilt():
+    """
+    Execution time from start to finish seems to be 0.002, so quite short. Unsure where the slowdown is coming from 
+    Expects: 
+    
+    """
+    global x, y, fire, serial_active
+
     data = request.json
     tiltLR = data.get('tiltLR')
     tiltFB = data.get('tiltFB')
     # direction = data.get('direction')
 
-    # print(f"X:\t{tiltLR}, Y:\t{tiltFB}")
-    remapped_x = int(map_x_range(tiltLR))
-    remapped_y = int(map_y_range(tiltFB))
-    # message = f'<str(remapped_x), str(remapped_y), 0>'
-    ser.write(f'<{remapped_x}, {remapped_y}, 0>'.encode())
+    # Put all this in another function that updates separately 
+    x = int(map_x_range(tiltFB))
+    y = int(map_y_range(tiltLR))
+    
+    ser.write(f'<{x}, {y}, 0>'.encode())
 
-    print("x: ", remapped_x, "  y: ",remapped_y)
+    # print("x: ", x, "  y: ",y)
+    return jsonify({"status": "success"}), 200
 
 
-    return jsonify({"status": "success", "message": "Tilt data received"}), 200
+@app.route('/joystick', methods=["POST"])
+def receive_joystick():
+    """
+    Expects json: 
+    {
+        x: -100 to 100,
+        y: -100 to 100
+    }
+    """
+
+    global x, y, fire, serial_active
+
+    data = request.json 
+    lr = data.get('x')
+    ud = data.get('y')
+
+    x = int(map_x_range(-int(lr), old_min=-100, old_max=100))
+    y = int(map_y_range(int(ud), old_min=-100, old_max=100))
+
+
+    ser.write(f'<{x}, {y}, 0>'.encode())
+    return jsonify({'status': "success"}), 200
+
 
 
 @app.route('/show_tilt')
@@ -134,17 +180,8 @@ def fire():
     Fires for a set amount of time 
     """
     print('Firing')
-    # return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
     return jsonify({'success': True}), 200
 
-
-# @app.route('/video_feed', methods={"GET", "POST"}) 
-# def video_feed():
-#     """
-#     https://towardsdatascience.com/video-streaming-in-web-browsers-with-opencv-flask-93a38846fe00
-#     This creates the problem of the camera not being able to stop 
-#     """
-#     return Response(gen_frames2(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/video_feed')
@@ -156,7 +193,11 @@ def video_feed():
 
 if __name__ == "__main__":
     try:
+        thread.start()
         app.run(host='0.0.0.0', port=5000, debug=False, ssl_context=('../server.crt', '../server.key')) 
+        
     except Exception as e:
         print(f"Error: {e}")
-        shutdown_server()        
+          
+    finally:
+        shutdown_server()
