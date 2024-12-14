@@ -78,7 +78,7 @@
 
 
         // Create JoyStick object into the DIV 'joy1Div'
-        var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
+        var Joy1 = new JoyStick('joy1Div', {"autoReturnToCenter": false }, function(stickData) {
             joy1IinputPosX.value = stickData.xPosition;
             joy1InputPosY.value = stickData.yPosition;
             joy1Direzione.value = stickData.cardinalDirection;
@@ -99,9 +99,7 @@
                     "y": joy1Y.value
                 })
             })
-
             
-
         }, 50);
     </script>
 </body>
