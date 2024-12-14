@@ -1,143 +1,97 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<!-- Main body -->
+<script src="static/joy.min.js"></script>
 
-<!-- HTML, Body and Video styling -->
 <style>
-    body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #ddd;
-}
-
-.video-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-#background-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-#containerStyle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;   
-
-}
-
-.row {
-    height: 50%; /* 4 rows, each 25% of the height */
-}
-.col {
-    border: 1px solid #000; /* Optional: for better visualization */
-}
-
-</style>
-
-<!-- Crosshair styling -->
-<style>
-    #crosshair {
-        position: relative;
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
     }
 
-    #crosshair::before,
-    #crosshair::after {
-        content: "";
+    .video-container {
         position: absolute;
-        background-color: black;
-    }
-
-    #crosshair::before {
         top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        transform: translate(-50%, -50%);
+        overflow: hidden;
+        z-index: 1;
     }
 
-    #crosshair::after {
-        left: 50%;
-        top: 0;
-        bottom: 0;
-        width: 1px;
+    .video-container img {
+        min-width: 100%;
+        min-height: 100%;
+        object-fit: cover; /* Maintain aspect ratio and cover the screen */
     }
+
+    .full-screen {
+        height: 100vh;
+        position: relative;
+        z-index: 2; /* Ensure the grid is on top of the video */
+    }
+
+    /* Transparent box */
+    .border-box.transparent {
+        background-color: rgba(255, 255, 255, 0); /* Fully transparent background */
+        border: 2px solid black; /* Visible border */
+        height: 100%;
+    }
+
+    /* Opaque box */
+    .border-box.opaque {
+        background-color: rgba(255, 255, 255, 1); /* Non-transparent background */
+        border: 2px solid black; /* Visible border */
+        height: 100%;
+    }
+
+    .row-divider {
+        height: 50%; /* Each row takes half the height */
+    }
+
+    .col-divider {
+        height: 100%; /* Each column takes full height */
+    }
+
 </style>
 
-<div class=".container-fluid h-100" id="containerStyle">
-
-    <script src="static/joy.min.js"></script>
-
-    <!-- <img src="{{ url_for('video_feed') }}" width="100%"> -->
-    
+<body>
+    <!-- Video Container -->
     <div class="video-container">
-        <video id="background-video" autoplay muted></video>
+        <img src="{{ url_for('video_feed') }}">
     </div>
 
-    <!-- Attempt 2 -->
-    <!-- <div class="row">
-        <div class="col" style="border: 2px solid black;">
-            <div class="columnLateral">
-                <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div>
-            </div>   
-        </div>
-        <div class="col" style="border: 2px solid black;">
-            2
-        </div>
-        <div class="w-100"></div>
-        <div class="col" style="border: 2px solid black;">
-            3
-        </div>
-        <div class="col" style="border: 2px solid black;">
-            <button class="btn btn-danger btn-lg" href="/fire">   Fire   </button>
 
+    <!-- Crosshair Layout -->
+    <div class="container-fluid full-screen">
+        <div class="row row-divider">
+            <div class="col-6 border-box transparent col-divider"></div>
+            <div class="col-6 border-box transparent col-divider"></div>
         </div>
-      </div> -->
+        <div class="row row-divider">
+            <div class="col-6 border-box col-divider"></div>
+            
+            <div class="col-6 border-box transparent col-divider">
+                <div class="opaque">
+                    
+                    <div id="joy1Div" style="width:200px;height:200px;margin:50px"></div>
+                    Posizione X:<input id="joy1PosizioneX" type="text" /><br />
+                    Posizione Y:<input id="joy1PosizioneY" type="text" /><br />
+                    Direzione:<input id="joy1Direzione" type="text" /><br />
+                    X :<input id="joy1X" type="text" /></br>
+                    Y :<input id="joy1Y" type="text" />                    
 
-
-        <div class="row">
-            <div class="col d-flex justify-content-center align-items-center">
-                R1, C1
-            </div>
-            <div class="col d-flex justify-content-center align-items-center">
-                R1, C2
+                    <!-- Fire button  -->
+                    <button class="btn btn-danger btn-lg" id="fire-button">   Fire   </button>
+              
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col d-flex justify-content-center align-items-center">
-                R2, C1
-                <div class="columnLateral">
-                    <div id="joy1Div" style="width:200px;height:200px;margin:25px"></div>
-                </div>   
-            </div>
-            <div class="col d-flex justify-content-center align-items-center">
-                R2, C2
-                <button class="btn btn-danger btn-lg" href="/fire">   Fire   </button>
-            </div>
-        </div>
+    </div>
 
-    <!-- Camera view -->
-    <!-- <div id="preview"> 
-        <div id="crosshair"> 
-            <img id="preview_image" width=100%>
-        </div>    
-    </div> -->
-    
-    <!-- <script src="{{ url_for('static', filename='cam_preview.js') }}"></script>  -->
 
     <script type="text/javascript">
         var joy1IinputPosX = document.getElementById("joy1PosizioneX");
@@ -152,16 +106,54 @@
         setInterval(function(){ joy1X.value=Joy1.GetX(); }, 50);
         setInterval(function(){ joy1Y.value=Joy1.GetY(); }, 50);
         */
+
+        document.getElementById('fire-button').addEventListener('click', function() {
+            console.log("firing");
+
+            fetch('/fire', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({"data": "fire"}),
+            })
+        // .then(response => response.json()) // Parse JSON response
+        // // .then(data => {
+        // //     // Update the page with the response (without refresh)
+        // //     // document.getElementById('response').innerText = `Response from server: ${data.response}`;
+        // //     console.log(data.response);
+        // // })
+        // .catch((error) => {
+        //     console.error('Error:', error);
+        // });
+        });
+
+
         // Create JoyStick object into the DIV 'joy1Div'
-        var Joy1 = new JoyStick('joy1Div', {}, function(stickData) {
+        var Joy1 = new JoyStick('joy1Div', {"autoReturnToCenter": false }, function(stickData) {
             joy1IinputPosX.value = stickData.xPosition;
             joy1InputPosY.value = stickData.yPosition;
             joy1Direzione.value = stickData.cardinalDirection;
             joy1X.value = stickData.x;
             joy1Y.value = stickData.y;
-        });                        
+        });              
+        
+        setInterval(function(){ 
+            console.log(joy1X.value, joy1Y.value); 
+
+            fetch('/joystick', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "x": joy1X.value,
+                    "y": joy1Y.value
+                })
+            })
+            
+        }, 50);
     </script>
-    
-</div> 
+</body>
 
 {% endblock %} 

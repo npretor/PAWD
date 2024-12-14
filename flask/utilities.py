@@ -1,19 +1,21 @@
 import time 
+import numpy as np
 
 class FiringTimer:
     def __init__(self, firing_time=5):
         self.firing_time = firing_time
-        self.firing_active = False
+        self.firing_active = 0
         self.t_stop = time.time()
 
     def fire(self):
         self.t_stop = time.time() + self.firing_time
+        self.update_firing_status()
 
     def update_firing_status(self):
         if time.time() >= self.t_stop:
-            self.firing_active = False 
+            self.firing_active = 0 
         else:
-            self.firing_active = True
+            self.firing_active = 1
 
     @property
     def firing_status(self):

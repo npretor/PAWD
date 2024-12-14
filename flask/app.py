@@ -30,9 +30,9 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 
-x, y, = 1500, 1500 
-fire = False 
-firing_active = False 
+x = 1500
+y = 1500 
+firing_active = 1
 serial_active = True 
 video_active = True
 
@@ -42,7 +42,7 @@ ser = serial.Serial(port='/dev/ttyUSB0', baudrate=115200)
 
 
 def motion_control():
-    global x, y, fire, serial_active, video_active, firing_active
+    global x, y, serial_active, video_active, firing_active
     while serial_active:
         firing_active = timer.firing_status
         ser.write(f'<{x}, {y}, {firing_active}>'.encode())
@@ -69,7 +69,7 @@ def generate_frames():
 def shutdown_server():
     """Function to release the camera and cleanup resources"""
     print("Shutting down server and releasing resources...")
-    global x, y, fire, serial_active, video_active
+    global x, y, serial_active, video_active
     serial_active = False 
     video_active = False
 
@@ -105,7 +105,7 @@ def home():
 #     Expects: 
     
 #     """
-#     global x, y, fire, serial_active
+#     global x, y, serial_active
 
 #     data = request.json
 #     tiltLR = data.get('tiltLR')
@@ -136,7 +136,7 @@ def receive_joystick():
     }
     """
 
-    global x, y, fire, serial_active
+    global x, y, serial_active
 
     data = request.json 
     lr = data.get('x')
@@ -156,6 +156,7 @@ def fire():
     global firing_active
     print('Firing')
     timer.fire()
+    firing_active = timer.firing_status
     return jsonify({'success': True}), 200
 
 @app.route('/video_feed')
