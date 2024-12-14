@@ -30,6 +30,21 @@ def start_video(start=False):
             return None
 
 
+def gstreamer_pipeline(
+        capture_width=640,
+        capture_height=480,
+        display_width=640,
+        display_height=480,
+        framerate=30,
+        flip_method=0):
+    return (
+        f'nvarguscamerasrc ! video/x-raw(memory:NVMM), '
+        f'width=(int){capture_width}, height=(int){capture_height}, '
+        f'framerate=(fraction){framerate}/1 ! nvvidconv flip-method={flip_method} ! '
+        f'video/x-raw, width=(int){display_width}, height=(int){display_height}, format=(string)BGRx ! '
+        f'videoconvert ! video/x-raw, format=(string)BGR ! appsink'
+    )
+
 # image_hub = imagezmq.ImageHub(open_port='tcp://192.168.4.119:5555', REQ_REP=False)
 
 # image_hub = imagezmq.ImageHub(open_port='tcp://127.0.0.1:5555', REQ_REP=False)            
